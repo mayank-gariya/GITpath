@@ -1,21 +1,21 @@
 import logging
 
-# Create logger
-logger = logging.getLogger("gitpath")
+def get_logger(name: str) -> logging.Logger:
+    logger = logging.getLogger(name)
 
-if not logger.handlers:
-    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        logger.setLevel(logging.INFO)
 
-    # Console handler
-    console_handler = logging.StreamHandler()
+        handler = logging.StreamHandler()
 
-    # Log format
-    formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
-    )
+        formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+        )
 
-    console_handler.setFormatter(formatter)
+        handler.setFormatter(formatter)
 
-    logger.addHandler(console_handler)
+        logger.addHandler(handler)
 
-logger.propagate = False
+    logger.propagate = False
+
+    return logger
