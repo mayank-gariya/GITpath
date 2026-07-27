@@ -1,4 +1,4 @@
-from github.client import GitHubClient
+from app.github.client import GitHubClient
 
 class GitHubService:
 

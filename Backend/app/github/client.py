@@ -1,10 +1,10 @@
 import httpx
 from typing import Optional
 
-from core.constants import GitHubAPI
-from core.settings import settings
-from core.logger import get_logger
-from schemas.user import GitHubUser
+from app.core.constants import GitHubAPI
+from app.core.settings import settings
+from app.core.logger import get_logger
+from app.github.schemas import GitHubUser
 
 logger = get_logger(__name__)
 

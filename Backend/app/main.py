@@ -1,4 +1,4 @@
-from github.service import GitHubService
+from app.github.service import GitHubService
 
 service = GitHubService()
 
