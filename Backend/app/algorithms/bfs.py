@@ -70,7 +70,7 @@ class BFS:
         path = []
         current = target
         
-        while current is not None   :
+        while current is not None:
             path.append(current)
             
             if current is None:

@@ -39,3 +39,7 @@ class LogMessages:
     GITHUB_REQUEST = "Calling GitHub API."
     CACHE_HIT = "Cache hit."
     CACHE_MISS = "Cache miss."
+    
+class SearchDirection(Enum):
+    FOLLOWERS = "followers"
+    FOLLOWING = "following"
