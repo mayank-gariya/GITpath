@@ -1,9 +1,9 @@
 import time
 from collections import deque
 from typing import Generator
-from app.graph.builder import GraphBuilder, SearchDirection
-from app.algorithms.schemas import SearchResult, SearchGraph, Edge, ProgressUpdate
-from app.graph.node import GraphNode
+from graph.builder import GraphBuilder, SearchDirection
+from algorithms.schemas import SearchResult, SearchGraph, Edge, ProgressUpdate
+from graph.node import GraphNode
 
 class BidirectionalBFS:
     
@@ -65,23 +65,24 @@ class BidirectionalBFS:
                 neighbor_name = neighbor if is_str else neighbor.username
                 neighbor_clean = neighbor_name.lower().strip()
                 
-                # Capture node data
-                if not is_str:
-                    nodes_map[neighbor_clean] = neighbor
-                elif neighbor_clean not in nodes_map:
-                    nodes_map[neighbor_clean] = GraphNode(username=neighbor_name, avatar_url="", html_url="")
-                
-                # Document relationship directional flow correctly
-                if direction == SearchDirection.FOLLOWING:
-                    edges.append(Edge(source=current, target=neighbor_clean))
-                else:
-                    edges.append(Edge(source=neighbor_clean, target=current))
-                
                 if neighbor_clean not in visited:
                     visited.add(neighbor_clean)
                     parent[neighbor_clean] = current
                     queue.append(neighbor_clean)
                     
+                    # Capture node metadata for the newly explored frontier node
+                    if not is_str:
+                        nodes_map[neighbor_clean] = neighbor
+                    elif neighbor_clean not in nodes_map:
+                        nodes_map[neighbor_clean] = GraphNode(username=neighbor_name, avatar_url="", html_url="")
+                    
+                    # Document relationship directional flow correctly
+                    if direction == SearchDirection.FOLLOWING:
+                        edges.append(Edge(source=current, target=neighbor_clean))
+                    else:
+                        edges.append(Edge(source=neighbor_clean, target=current))
+                    
+                    # Intersection check: Stop graph growth immediately when paths collide
                     if neighbor_clean in other_visited:
                         intersect_node = neighbor_clean
                         break

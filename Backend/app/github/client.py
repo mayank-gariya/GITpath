@@ -1,10 +1,10 @@
 import httpx
 from typing import Optional
 
-from app.core.constants import GitHubAPI
-from app.core.settings import settings
-from app.core.logger import get_logger
-from app.github.schemas import GitHubUser
+from core.constants import GitHubAPI
+from core.settings import settings
+from core.logger import get_logger
+from github.schemas import GitHubUser
 
 logger = get_logger(__name__)
 
@@ -38,7 +38,31 @@ class GitHubClient:
         except httpx.RequestError as exc:
             logger.error(f"An error occurred while requesting {exc.request.url!r}: {exc}")
             return None
+        
+    def get_followers(self, username: str) -> list[dict]:
+        logger.info(f"Fetching followers for {username}")
+        
+        try:
+            response = self.client.get(f"/users/{username}/followers")
+            response.raise_for_status()
+            return response.json()
 
+        except httpx.HTTPError as exc:
+            logger.error(f"Failed to fetch followers: {exc}")
+            return []
+    
+    def get_following(self, username: str) -> list[dict]:
+        logger.info(f"Fetching following for {username}")
+
+        try:
+            response = self.client.get(f"/users/{username}/following")
+            response.raise_for_status()
+            return response.json()
+
+        except httpx.HTTPError as exc:
+            logger.error(f"Failed to fetch following: {exc}")
+            return []
+        
     def close(self):
         """Close the underlying client connection pool."""
         self.client.close()

@@ -1,9 +1,9 @@
 import time
 from collections import deque
 from typing import Generator
-from app.graph.builder import GraphBuilder
-from app.algorithms.schemas import SearchResult, SearchGraph, Edge, ProgressUpdate
-from app.graph.node import GraphNode
+from graph.builder import GraphBuilder
+from algorithms.schemas import SearchResult, SearchGraph, Edge, ProgressUpdate
+from graph.node import GraphNode
 
 class BFS:
     
