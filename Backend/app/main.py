@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 
 from github.service import GitHubService
 from graph.builder import GraphBuilder
-from algorithms.bfs import BFS
 from algorithms.bidirectional_bfs import BidirectionalBFS
 
 st.set_page_config(
@@ -36,12 +35,8 @@ with st.sidebar:
         placeholder="torvalds"
     )
 
-    algorithm = st.radio(
-        "Algorithm",
-        [
-            "BFS",
-            "Bidirectional BFS"
-        ]
+    algorithm = st.subheader(
+        'algorithm : Birdectional BFS'
     )
 
     search_button = st.button(
@@ -120,11 +115,7 @@ if search_button:
 
     builder.api_calls = 0
 
-    # Instantiate the correct algorithm module dynamically
-    if algorithm == "BFS":
-        engine = BFS()
-    else:
-        engine = BidirectionalBFS()
+    engine = BidirectionalBFS()
 
     # Clear previous results
     graph_placeholder.empty()
