@@ -1,10 +1,22 @@
-import streamlit as st
-import networkx as nx
-import matplotlib.pyplot as plt
+import sys
+from pathlib import Path
+import streamlit as st 
+import networkx as nx                                                           
+import matplotlib.pyplot as plt   
 
-from github.service import GitHubService
-from graph.builder import GraphBuilder
-from algorithms.bidirectional_bfs import BidirectionalBFS
+current_dir = Path(__file__).resolve().parent
+project_root = current_dir.parent 
+
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+backend_app_dir = project_root / "Backend" / "app"
+if str(backend_app_dir) not in sys.path:
+    sys.path.insert(0, str(backend_app_dir))
+
+from Backend.app.github.service import GitHubService
+from Backend.app.graph.builder import GraphBuilder
+from Backend.app.algorithms.bidirectional_bfs import BidirectionalBFS
 
 st.set_page_config(
     page_title="GitPath",
