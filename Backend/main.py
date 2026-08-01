@@ -1,31 +1,47 @@
 import sys
 from pathlib import Path
-import streamlit as st 
-import networkx as nx                                                           
-import matplotlib.pyplot as plt   
+import streamlit as st
 
-current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent 
+# --------------------------------------------------
+# Path setup – add the parent directory so "Backend" is a package
+# --------------------------------------------------
+project_root = Path(__file__).resolve().parent          # Backend/
+parent_dir = project_root.parent                        # directory containing Backend/
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
-backend_app_dir = project_root / "Backend" / "app"
-if str(backend_app_dir) not in sys.path:
-    sys.path.insert(0, str(backend_app_dir))
-
+# Now import from Backend.app...
 from Backend.app.github.service import GitHubService
 from Backend.app.graph.builder import GraphBuilder
 from Backend.app.algorithms.bidirectional_bfs import BidirectionalBFS
 
-st.set_page_config(
-    page_title="GitPath",
-    page_icon="🕸️",
-    layout="wide"
+from Backend.app.ui.styles import apply_custom_css
+from Backend.app.ui.components import (
+    render_user_card,
+    draw_graph,
+    render_metrics,
+    render_stats
 )
+from Backend.app.ui.utils import fetch_user
 
-st.title("🕸️ GitPath")
-st.caption("Find the shortest GitHub connection path between two users.")
+# --------------------------------------------------
+# Page config & CSS
+# --------------------------------------------------
+st.set_page_config(page_title="GitPath", page_icon="🕸️", layout="wide")
+apply_custom_css()
+
+# --------------------------------------------------
+# Custom Header (enhanced)
+# --------------------------------------------------
+st.markdown(
+    """
+    <div class="centered-header" style="border-bottom: 3px solid #f97316; padding-bottom: 0.5rem; box-shadow: 0 4px 20px rgba(249,115,22,0.15);">
+        <h1>🕸️ GitPath</h1>
+        <p style="color: #d1d5db;">Find the shortest GitHub connection path between two users instantly.</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 @st.cache_resource
 def get_builder():
@@ -34,206 +50,105 @@ def get_builder():
 
 builder = get_builder()
 
-
+# --------------------------------------------------
+# Sidebar
+# --------------------------------------------------
 with st.sidebar:
-    st.header("Search")
-    start_user = st.text_input(
-        "Start User",
-        placeholder="octocat"
-    )
-
-    target_user = st.text_input(
-        "Target User",
-        placeholder="torvalds"
-    )
-
-    algorithm = st.subheader(
-        'algorithm : Birdectional BFS'
-    )
-
-    search_button = st.button(
-        "Search",
-        use_container_width=True
-    )
+    st.header("Search Configuration")
+    start_user = st.text_input("Start User", placeholder="octocat")
+    target_user = st.text_input("Target User", placeholder="torvalds")
+    st.markdown("---")
+    st.caption("**Algorithm Selected:** Bidirectional BFS")
+    search_button = st.button("Search Path", use_container_width=True, type="primary")
 
 # --------------------------------------------------
-# Metrics
+# Placeholders
 # --------------------------------------------------
-
 metric_col1, metric_col2, metric_col3 = st.columns(3)
-
-visited_metric = metric_col1.empty()
-api_metric = metric_col2.empty()
-current_metric = metric_col3.empty()
-
-status = st.empty()
-
-# Placeholders for graph and path info
-graph_placeholder = st.empty()
+metric_placeholders = {
+    'visited': metric_col1.empty(),
+    'api': metric_col2.empty(),
+    'current': metric_col3.empty()
+}
+status_placeholder = st.empty()          
 path_placeholder = st.empty()
 profile_placeholder = st.empty()
+graph_placeholder = st.empty()
+stats_placeholder = st.empty()
 
-
-# --------------------------------------------------
-# Graph Drawing (final version with path highlight)
-# --------------------------------------------------
-
-def draw_graph_with_path(search_graph, path_nodes):
-    """Draw the full search graph and highlight the shortest path."""
-    G = nx.DiGraph()
-
-    # Add all nodes and edges
-    for node in search_graph.nodes:
-        G.add_node(node.username)
-    for edge in search_graph.edges:
-        G.add_edge(edge.source, edge.target)
-
-    fig, ax = plt.subplots(figsize=(10, 8))
-    pos = nx.spring_layout(G, seed=42)  # deterministic layout
-
-    # Draw all nodes and edges
-    nx.draw_networkx_nodes(G, pos, ax=ax, node_size=600, node_color="lightblue")
-    nx.draw_networkx_edges(G, pos, ax=ax, edge_color="gray", arrows=True, arrowsize=15)
-
-    # Highlight path nodes
-    path_edges = list(zip(path_nodes, path_nodes[1:]))
-    if path_edges:
-        nx.draw_networkx_nodes(G, pos, nodelist=path_nodes, ax=ax,
-                               node_size=800, node_color="red")
-        nx.draw_networkx_edges(G, pos, edgelist=path_edges, ax=ax,
-                               edge_color="red", width=3, arrows=True, arrowsize=20)
-
-    # Draw labels
-    nx.draw_networkx_labels(G, pos, ax=ax, font_size=8)
-
-    ax.axis("off")
-    graph_placeholder.pyplot(fig)
-
-def get_user_from_graph(graph, username):
-    """Return the node object with the given username from the search graph."""
-    for node in graph.nodes:
-        if node.username == username:
-            return node
-    return None
+# Helper: show custom status box
+def show_status(message, type_="info"):
+    icons = {"info": "📡", "success": "✅", "error": "❌"}
+    status_placeholder.markdown(
+        f'<div class="custom-status {type_}">{icons.get(type_, "ℹ️")} {message}</div>',
+        unsafe_allow_html=True
+    )
 
 # --------------------------------------------------
-# Search Execution
+# Search execution
 # --------------------------------------------------
-
 if search_button:
     if not start_user or not target_user:
-        st.error("Please enter both usernames.")
+        st.error("Please fill out both fields.")
         st.stop()
 
     builder.api_calls = 0
-
     engine = BidirectionalBFS()
 
-    # Clear previous results
-    graph_placeholder.empty()
-    path_placeholder.empty()
-    profile_placeholder.empty()
+    for ph in [graph_placeholder, path_placeholder, profile_placeholder, stats_placeholder, status_placeholder]:
+        ph.empty()
 
-    with st.spinner("Searching..."):
-        # Both engines now share the identical streaming interface
-        for update in engine.get_shortest_path_stream(
-            start_user,
-            target_user,
-            builder,
-        ):
-            # Always update metrics
-            visited_metric.metric(
-                "Visited",
-                update.visited_count
-            )
-
-            api_metric.metric(
-                "API Calls",
-                builder.api_calls
-            )
-
-            current_metric.metric(
-                "Current List Node",
-                update.current_node
+    with st.spinner("Mapping paths across GitHub networks..."):
+        for update in engine.get_shortest_path_stream(start_user, target_user, builder):
+            render_metrics(
+                visited_count=update.visited_count,
+                api_calls=builder.api_calls,
+                current_node=update.current_node,
+                placeholder_dict=metric_placeholders
             )
 
             if update.type == "progress":
-                status.info(
-                    f"Searching frontier near **{update.current_node}**..."
-                )
+                show_status(f"Exploring adjacent nodes around user: **{update.current_node}**...", "info")
             else:
-                # Final update: draw graph and show user profiles
                 result = update.result
-
                 if result.found:
-                    status.success("Path Found ✅")
-                    path_placeholder.markdown(
-                        "### Shortest Path\n\n"
-                        + " → ".join(result.path)
+                    # --- Success Banner ---
+                    status_placeholder.markdown(
+                        """
+                        <div class="success-banner">
+                            <span class="big-icon">🎉</span>
+                            <div class="title">Shortest Connection Discovered!</div>
+                            <div class="sub">Path found between <strong>""" + start_user + """</strong> and <strong>""" + target_user + """</strong></div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
                     )
-                    
+
+                    # --- Path as steps ---
+                    steps_html = '<div class="path-steps">'
+                    for idx, username in enumerate(result.path):
+                        steps_html += f'<span class="path-step"><span class="step-num">{idx+1}.</span> {username}</span>'
+                        if idx < len(result.path) - 1:
+                            steps_html += '<span class="path-arrow">➔</span>'
+                    steps_html += '</div>'
+                    path_placeholder.markdown(
+                        f"### 📍 Connection Route\n{steps_html}",
+                        unsafe_allow_html=True
+                    )
+
+                    # --- User cards ---
                     with profile_placeholder.container():
-                        st.markdown("### 👥 User Profiles on the Path")
-                        
-                        # Set up a clean grid layout (max 4 cards per row)
-                        max_cols = 4
-                        path_len = len(result.path)
-                        
+                        st.markdown("### 👥 Path Profile Connections")
+                        cols = st.columns(min(4, len(result.path)))
                         for idx, username in enumerate(result.path):
-                            # Create a new row of columns when needed
-                            if idx % max_cols == 0:
-                                cols = st.columns(min(max_cols, path_len - idx))
-                            
-                            col = cols[idx % max_cols]
-                            user_node = get_user_from_graph(update.graph, username)
-                            
-                            with col:
-                                # Wrap each profile in a clean bordered card
-                                with st.container(border=True):
-                                    if user_node:
-                                        # Avatar image layout
-                                        if getattr(user_node, 'avatar_url', None):
-                                            st.image(user_node.avatar_url, width=80)
-                                        else:
-                                            st.markdown("### 👤")
-                                            
-                                        # Name & Handle (safely using username)
-                                        display_name = getattr(user_node, 'name', None) or user_node.username
-                                        st.markdown(f"**{display_name}**")
-                                        st.caption(f"@{user_node.username}")
-                                        
-                                        # Metrics Grid
-                                        m_col1, m_col2, m_col3 = st.columns(3)
-                                        m_col1.metric("Repos", getattr(user_node, 'public_repos', '?'))
-                                        m_col2.metric("Followers", getattr(user_node, 'followers', '?'))
-                                        m_col3.metric("Following", getattr(user_node, 'following', '?'))
-                                        
-                                        # Bio Section
-                                        bio = getattr(user_node, 'bio', None)
-                                        if bio:
-                                            st.caption(f"📝 {bio[:75]}..." if len(bio) > 75 else f"📝 {bio}")
-                                    else:
-                                        # Fallback placeholder if profile payload isn't fully loaded yet
-                                        st.markdown(f"### 👤\n**{username}**")
-                                        st.caption("Profile data loading...")
-                                        
-                    # Draw the final graph with path highlighted
-                    draw_graph_with_path(update.graph, result.path)
+                            with cols[idx % len(cols)]:
+                                user = fetch_user(username, builder)
+                                render_user_card(user)
 
+                    draw_graph(update.graph, result.path, graph_placeholder)
                 else:
-                    status.error("No path found.")
-                    # Optionally draw the full graph anyway
-                    draw_graph_with_path(update.graph, [])
+                    show_status(f"No connection found between **{start_user}** and **{target_user}**.", "error")
+                    draw_graph(update.graph, [], graph_placeholder)
 
-                st.divider()
-                st.subheader("Statistics")
-                st.json(
-                    {
-                        "Visited Users": result.visited_count,
-                        "Depth": result.search_depth,
-                        "API Calls": result.api_calls,
-                        "Execution Time": f"{result.elapsed_time}s",
-                        "Edges": len(result.graph.edges),
-                        "Nodes": len(result.graph.nodes),
-                    }
-                )
+                with stats_placeholder.container():
+                    render_stats(result)

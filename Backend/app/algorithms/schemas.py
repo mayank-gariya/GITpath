@@ -1,15 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel ,  ConfigDict
 from typing import List, Optional
-from graph.node import GraphNode
+from Backend.app.graph.node import GraphNode
 
 class Edge(BaseModel):
     source: str
     target: str
 
+
 class SearchGraph(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     nodes: List[GraphNode] = []
     edges: List[Edge] = []
-
+    
 class SearchResult(BaseModel):
     found: bool
     path: List[str]

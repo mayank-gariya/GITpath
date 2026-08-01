@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from core.constants import SearchDirection
+from Backend.app.core.constants import SearchDirection
 
 class SearchConfig(BaseModel):
     max_depth: int = Field(
