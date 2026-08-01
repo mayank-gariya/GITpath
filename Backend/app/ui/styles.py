@@ -193,5 +193,42 @@ def apply_custom_css():
         font-weight: 700;
         color: #f97316;
     }
+    /* Path steps – horizontal scrollable */
+    .path-scroll {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 0.2rem 0.5rem;
+        padding: 0.5rem 0.2rem;
+        background: #161b22;
+        border-radius: 12px;
+        border: 1px solid #30363d;
+        align-items: center;
+    }
+    .path-step-badge {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        border-radius: 20px;
+        padding: 0.2rem 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+        color: #f3f4f6;
+    }
+    .path-step-badge .num {
+        color: #f97316;
+        margin-right: 0.2rem;
+    }
+    .path-arrow-big {
+        color: #f97316;
+        font-size: 1.3rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    
+    .section-spacer {
+        margin-top: 3.5rem;
+        margin-bottom: 5rem;
+    }
     """
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
