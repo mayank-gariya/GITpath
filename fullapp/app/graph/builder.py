@@ -1,10 +1,10 @@
 import time
 from enum import Enum
 from typing import List, Dict, Tuple
-from Backend.app.graph.node import GraphNode
-from Backend.app.github.service import GitHubService
-from Backend.app.core.logger import get_logger
-from Backend.app.core.constants import SearchDirection
+from fullapp.app.graph.node import GraphNode
+from fullapp.app.github.service import GitHubService
+from fullapp.app.core.logger import get_logger
+from fullapp.app.core.constants import SearchDirection
 
 logger = get_logger(__name__)
 
