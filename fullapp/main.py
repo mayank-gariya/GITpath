@@ -11,18 +11,18 @@ if str(parent_dir) not in sys.path:
     sys.path.insert(0, str(parent_dir))
 
 # Now import from Backend.app...
-from Backend.app.github.service import GitHubService
-from Backend.app.graph.builder import GraphBuilder
-from Backend.app.algorithms.bidirectional_bfs import BidirectionalBFS
+from fullapp.app.github.service import GitHubService
+from fullapp.app.graph.builder import GraphBuilder
+from fullapp.app.algorithms.bidirectional_bfs import BidirectionalBFS
 
-from Backend.app.ui.styles import apply_custom_css
-from Backend.app.ui.components import (
+from fullapp.app.ui.styles import apply_custom_css
+from fullapp.app.ui.components import (
     render_user_card,
     draw_graph,
     render_metrics,
     render_stats
 )
-from Backend.app.ui.utils import fetch_user
+from fullapp.app.ui.utils import fetch_user
 
 # --------------------------------------------------
 # Page config & CSS
