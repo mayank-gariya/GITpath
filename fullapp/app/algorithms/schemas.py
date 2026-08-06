@@ -1,6 +1,6 @@
 from pydantic import BaseModel ,  ConfigDict
 from typing import List, Optional
-from Backend.app.graph.node import GraphNode
+from fullapp.app.graph.node import GraphNode
 
 class Edge(BaseModel):
     source: str
