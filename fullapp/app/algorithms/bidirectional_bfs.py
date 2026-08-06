@@ -1,9 +1,9 @@
 import time 
 from collections import deque
 from typing import Generator
-from Backend.app.graph.builder import GraphBuilder, SearchDirection
-from Backend.app.algorithms.schemas import SearchResult, SearchGraph, Edge, ProgressUpdate
-from Backend.app.graph.node import GraphNode
+from fullapp.app.graph.builder import GraphBuilder, SearchDirection
+from fullapp.app.algorithms.schemas import SearchResult, SearchGraph, Edge, ProgressUpdate
+from fullapp.app.graph.node import GraphNode
 
 class BidirectionalBFS:
     
