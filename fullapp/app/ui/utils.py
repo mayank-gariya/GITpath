@@ -1,5 +1,5 @@
 import streamlit as st
-from Backend.app.graph.builder import GraphBuilder
+from fullapp.app.graph.builder import GraphBuilder
 
 @st.cache_data(ttl=3600)
 def fetch_user(username: str, _builder: GraphBuilder):
