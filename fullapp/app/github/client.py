@@ -1,4 +1,5 @@
 import httpx
+import streamlit as st
 from typing import Optional
 
 from fullapp.app.core.constants import GitHubAPI
@@ -11,13 +12,22 @@ logger = get_logger(__name__)
 class GitHubClient:
 
     def __init__(self):
+        # Resolve token priority: Settings -> Streamlit Secrets -> None
+        token = settings.GITHUB_TOKEN or st.secrets.get("GITHUB_TOKEN", "")
+        token = token.strip() if token else ""
+
+        headers = {**GitHubAPI.DEFAULT_HEADERS}
+        
+        # Only add Authorization header if a non-empty token exists
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        else:
+            logger.warning("No GITHUB_TOKEN provided. Requests will be unauthenticated and rate-limited.")
+
         self.client = httpx.Client(
             base_url=GitHubAPI.BASE_URL,
             timeout=settings.REQUEST_TIMEOUT,
-            headers={
-                **GitHubAPI.DEFAULT_HEADERS,
-                "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
-            },
+            headers=headers,
         )
 
     def get_user(self, username: str) -> Optional[GitHubUser]:
