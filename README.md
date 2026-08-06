@@ -1,132 +1,65 @@
 # GITpath
 
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)  [![License: MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
-A tool to discover connection paths between GitHub users — i.e., how one user is connected to another through follower/following relationships. GITpath models users as graph nodes and follower/following relations as undirected edges, and finds short paths between two users efficiently.
+A small, practical tool to find connection paths between GitHub users using breadth-first search techniques (optimized with bidirectional BFS).
 
-Table of contents
-- About
-- Key features
-- Architecture — how components connect
-- Why bidirectional BFS (not plain BFS)
-- Future improvements
-- Example
-- Quickstart (install & run)
-- Configuration & rate limits
-- Tech stack & badges
-- Contributing
-- License
+Demo
+----
 
-About
------
-GITpath explores GitHub's social graph to answer questions like "How is user A connected to user B?". The project favors efficiency: instead of using a naive single-source BFS (which can blow up in time and requests), GITpath implements bidirectional breadth-first search to reduce the number of nodes explored and the number of GitHub API calls.
+<video controls width="720">
+  <source src="fullapp/GitPath - Profile 1 - Microsoft_ Edge 2026-08-01 21-30-20.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
-Key features
-------------
-- Finds connection paths between two GitHub users (via followers / following links).
-- Uses bidirectional BFS to dramatically reduce search time and API usage compared to single-source BFS.
-- Modular design: separate components for fetching neighbors, search orchestration, caching, and presentation (CLI/API/UI).
-- Simple caching/persistence hooks so repeated queries for popular users cost less.
+If the embedded player does not appear on GitHub, open the demo directly:
 
-Architecture — how components connect
-------------------------------------
-1. CLI / API / UI
-   - Accepts source & target usernames and optional parameters (token, max depth, cache settings).
-2. Coordinator / Runner
-   - Validates input, reads configuration, sets up logging and rate-limit handling.
-3. Graph Fetcher (GitHub API client)
-   - Fetches followers/following for a given username, handles pagination, authentication, errors, and rate-limit backoff.
-   - Optionally persists neighbor lists to the Cache layer.
-4. Cache / Persistence (optional)
-   - Local file cache, SQLite, or Redis store for neighbor lists and previously computed paths.
-5. Search Engine (Bidirectional BFS)
-   - Maintains two frontiers (from source and target). Always expands the smaller frontier to keep exploration minimal.
-   - After each expansion checks for intersection between visited sets; when found, it reconstructs the full path.
-6. Output / Result
-   - Returns the path (sequence of GitHub usernames), and optionally stores it in cache.
+https://github.com/mayank-gariya/GITpath/blob/main/fullapp/GitPath%20-%20Profile%201%20-%20Microsoft_%20Edge%202026-08-01%2021-30-20.mp4
 
-Interaction flow (concise):
-- User requests path A -> B → Coordinator initializes Search Engine → Search Engine asks Graph Fetcher for neighbors on-demand → Cache used when available → When frontiers intersect, the full path is reconstructed and returned.
+What this project does (short)
+-----------------------------
 
-Why bidirectional BFS (not plain BFS)
--------------------------------------
-Single-source BFS expands outward from one side and can explore O(b^d) nodes (b = branching factor, d = distance). Bidirectional BFS starts from both source and target and expands until the two searches meet. In typical undirected graphs this reduces explored nodes roughly to O(b^(d/2) + b^(d/2)), which is exponentially smaller for larger d. Practically this means far fewer GitHub API requests and much lower latency.
+- Models GitHub users as nodes and follower/following relationships as edges.
+- Uses bidirectional BFS (searching from source and target) to find a short connection path quickly while using fewer API calls.
+- Designed to be modular: fetcher (GitHub API), cache, search engine, and output layer (CLI/API/UI).
 
-Future improvements (planned)
-----------------------------
-- Heuristic-guided searches (e.g., A* with heuristics based on mutual languages, repo overlap, or follower overlap).
-- Weighted graph searches where relationships have different costs (mutual follows < one-way follows).
-- Precomputed clusters / community detection to route searches across community boundaries faster.
-- Parallel or distributed search for very large queries (multi-worker system with a message queue and shared cache).
+Quick start
+-----------
 
-Example (conceptual)
---------------------
-Find a connection between `alice` and `bob`.
-- Start: frontierA = {alice}, frontierB = {bob}
-- Expand the smaller frontier (fetch neighbors as needed), alternate; on finding intersection user `x` reconstruct path: path(alice→x) + reversed(path(bob→x)).
+1. Clone:
 
-Quickstart (install & run)
---------------------------
-Prerequisites
-- Python 3.8+
-- A GitHub personal access token (recommended) in environment variable GITHUB_TOKEN for higher rate limits.
-
-Install
-1. Clone the repo:
    git clone https://github.com/mayank-gariya/GITpath.git
-2. Create and activate a virtual environment, then install dependencies (if requirements.txt exists):
+
+2. (Optional) Create & activate virtualenv:
+
    python -m venv .venv
    source .venv/bin/activate
-   pip install -r requirements.txt  # or pip install requests aiohttp networkx fastapi uvicorn
 
-Run (example CLI)
-- Example usage (pseudo):
-  python run_search.py --source mayank-gariya --target torvalds --token $GITHUB_TOKEN
+3. Install dependencies if present:
 
-Run as a service (if an API exists)
-- Example (FastAPI / uvicorn):
-  uvicorn app.main:app --reload
-- POST /search {"source": "alice", "target": "bob"}
+   pip install -r requirements.txt
 
-Configuration & rate limits
----------------------------
-- Use a token (GITHUB_TOKEN) to increase rate limits.
-- Graph Fetcher honors rate-limit headers (X-RateLimit-Remaining, X-RateLimit-Reset) and backoff when needed.
-- Caching neighbor lists reduces repeated API calls for popular users — consider using Redis for production.
+4. Example run (replace script name if different):
 
-Demo video (live proof)
+   python run_search.py --source alice --target bob --token $GITHUB_TOKEN
+
+Notes
+-----
+
+- A GitHub personal access token (GITHUB_TOKEN) is recommended to avoid strict rate limits.
+- Caching neighbor lists (local files, SQLite or Redis) reduces repeated API calls for popular users.
+
+Why bidirectional BFS?
 -----------------------
-A demo video showing the project working live is included in the `fullapp` folder of this repository. See the folder here:
-https://github.com/mayank-gariya/GITpath/tree/main/fullapp
 
-Tech stack & badges
--------------------
-- Language: Python (100%)
-  ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
-- Libraries commonly used:
-  - requests / aiohttp — GitHub API client
-  - networkx — graph utilities (optional)
-  - cachetools / redis — caching
-  - FastAPI / Flask — web API
-  - pytest — tests
+Bidirectional BFS expands from both source and target and meets in the middle — this reduces the number of explored nodes from O(b^d) to roughly O(b^(d/2)), so searches are much faster and cheaper (fewer API calls).
 
 Contributing
 ------------
-Contributions are welcome. Suggested workflow:
-- Fork the repo
-- Create a feature branch (feature/xyz or fix/issue-#)
-- Add tests for new functionality
-- Submit a pull request with a clear description
+
+Contributions welcome: fork, branch, add tests, and open a pull request with a clear description.
 
 License
 -------
-This project is released under the MIT License. See LICENSE for details.
 
-
----
-
-If you'd like I can also:
-- Add CI badges (GitHub Actions) if you want a sample workflow file committed.
-- Add a requirements.txt or example Dockerfile.
-
+MIT
